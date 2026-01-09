@@ -91,22 +91,22 @@
       </div>
     </section>
 
-    <section class="cards">
-      <article class="card">
-        <p class="eyebrow">Deploy Fast</p>
-        <h3>Drop into Vercel</h3>
-        <p>Static-first. API routes live in /api for serverless wiring. No build step required.</p>
-      </article>
-      <article class="card">
-        <p class="eyebrow">Bring your backend</p>
-        <h3>Swap mocks for real</h3>
-        <p>Point the proxy routes at your yt-dlp or ytdl-core worker. The front-end already expects JSON updates.</p>
-      </article>
-      <article class="card">
-        <p class="eyebrow">UX tuned</p>
-        <h3>Bold, legible, responsive</h3>
-        <p>Space Grotesk + Inter, animated gradients, and smooth progress transitions that feel intentional.</p>
-      </article>
+    <section class="about">
+      <div>
+        <p class="eyebrow">About</p>
+        <h3>apeXion Web Downloader</h3>
+        <p class="muted">Paste any supported link, pick a quality, and grab the media. Your backend worker handles the heavy lifting—Vercel just proxies.</p>
+      </div>
+      <div class="about-grid">
+        <div>
+          <p class="eyebrow">How it works</p>
+          <p class="muted">The frontend calls `/api/info` and `/api/download`, which forward to your FastAPI yt-dlp worker. When ready, a download link appears below.</p>
+        </div>
+        <div>
+          <p class="eyebrow">Notes</p>
+          <p class="muted">Keep `REMOTE_WORKER_URL` set in Vercel. Ensure the worker returns `download_url` so the buttons light up.</p>
+        </div>
+      </div>
     </section>
   </main>
 

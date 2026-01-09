@@ -39,14 +39,20 @@ function setDescription(text) {
 }
 
 function setDownloadLink(url) {
+  downloadAction.style.display = 'flex';
+  const buttons = [downloadBtn, downloadBtnImage];
   if (url) {
-    downloadBtn.href = url;
-    downloadBtnImage.href = url;
-    downloadAction.style.display = 'flex';
+    buttons.forEach((btn) => {
+      btn.classList.remove('disabled');
+      btn.href = url;
+      btn.textContent = btn === downloadBtn ? 'Download video' : 'Download image';
+    });
   } else {
-    downloadBtn.removeAttribute('href');
-    downloadBtnImage.removeAttribute('href');
-    downloadAction.style.display = 'none';
+    buttons.forEach((btn) => {
+      btn.classList.add('disabled');
+      btn.removeAttribute('href');
+      btn.textContent = 'Link not ready';
+    });
   }
 }
 
