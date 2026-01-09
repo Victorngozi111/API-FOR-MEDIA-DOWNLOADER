@@ -48,20 +48,26 @@ function setDownloadLink(url) {
 }
 
 async function fetchInfo(url, quality) {
+  const payload = { url };
+  if (quality && quality !== 'best') payload.quality = quality;
+
   const res = await fetch('/api/info', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url, quality })
+    body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error('Info request failed');
   return res.json();
 }
 
 async function startDownload(url, quality) {
+  const payload = { url };
+  if (quality && quality !== 'best') payload.quality = quality;
+
   const res = await fetch('/api/download', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url, quality })
+    body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error('Download request failed');
   return res.json();
