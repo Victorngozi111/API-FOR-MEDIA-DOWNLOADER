@@ -13,6 +13,15 @@ import yt_dlp
 TMP_DIR = Path(tempfile.gettempdir()) / "apexion_dl"
 TMP_DIR.mkdir(parents=True, exist_ok=True)
 
+DEFAULT_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/119.0.0.0 Safari/537.36"
+    ),
+    "Referer": "https://www.instagram.com/",
+}
+
 app = FastAPI(title="apeXion Downloader Worker")
 
 
@@ -42,12 +51,14 @@ def _ydl_opts(quality: Optional[str]) -> dict:
         "format": fmt,
         "noplaylist": True,
         "quiet": True,
+        "http_headers": DEFAULT_HEADERS,
     }
 
 
 @app.post("/info")
 async def info(payload: InfoRequest):
-    opts = _ydl_opts(payload.quality)
+    # Use safest defaults for metadata to reduce extractor-specific issues.
+    opts = _ydl_opts(None)
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
             data = ydl.extract_info(str(payload.url), download=False)
