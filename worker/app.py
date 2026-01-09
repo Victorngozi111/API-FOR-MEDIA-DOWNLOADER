@@ -107,11 +107,22 @@ async def download(payload: DownloadRequest, request: Request):
 
     file_path = candidates[0]
 
-    # Build a user-friendly filename for download (prefer title if present).
-    friendly_name = file_path.name
+    # First, enforce a safe filename based on the existing stem to avoid spaces/hashtags.
+    safe_base = _safe_filename(file_path.stem)
+    safe_name = f"{safe_base}{file_path.suffix}"
+    if safe_name != file_path.name:
+        safe_target = TMP_DIR / safe_name
+        try:
+            if safe_target.exists():
+                safe_target.unlink()
+            file_path.rename(safe_target)
+            file_path = safe_target
+        except Exception:
+            pass
+
+    # Then, try to make it user-friendly using the real title if available.
     try:
-        # If yt_dlp stored the id-based filename, try to swap to a safe, title-based name for the download URL.
-        with yt_dlp.YoutubeDL({"quiet": True}) as ydl:
+        with yt_dlp.YoutubeDL(_ydl_opts(None)) as ydl:
             info = ydl.extract_info(str(payload.url), download=False)
             title = info.get("title") if isinstance(info, dict) else None
             if title:
