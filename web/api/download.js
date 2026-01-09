@@ -1,13 +1,24 @@
-// Mock download endpoint. Wire up your actual downloader here.
+// Forwards download requests to a remote worker you control.
+// Set REMOTE_WORKER_URL (e.g., https://worker.example.com) in Vercel env vars.
 
-module.exports = (req, res) => {
+const WORKER_URL = process.env.REMOTE_WORKER_URL;
+
+module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const { url, quality } = req.body || {};
   if (!url) return res.status(400).json({ error: 'URL is required' });
+  if (!WORKER_URL) return res.status(500).json({ error: 'REMOTE_WORKER_URL not configured' });
 
-  res.status(200).json({
-    ok: true,
-    file: `demo-${quality || 'best'}.mp4`,
-    message: 'Download complete (mock). Implement real download logic server-side.'
-  });
+  try {
+    const upstream = await fetch(`${WORKER_URL}/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, quality })
+    });
+
+    const data = await upstream.json();
+    return res.status(upstream.ok ? 200 : upstream.status).json(data);
+  } catch (err) {
+    return res.status(502).json({ error: 'Upstream download request failed', detail: String(err) });
+  }
 };

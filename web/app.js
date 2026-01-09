@@ -59,23 +59,23 @@ form?.addEventListener('submit', async (e) => {
   const quality = document.getElementById('quality').value;
   if (!url) return;
 
-  setStatus('Fetching info', 'Contacting API…');
+  setStatus('Fetching info', 'Talking to the downloader…');
   log(`Requested: ${url} (${quality})`);
   mockProgress();
 
   try {
     const info = await fetchInfo(url, quality);
-    setStatus('Ready to download', info.message);
-    log(`Info: ${info.title} (${info.duration})`);
+    setStatus('Ready', info.message || 'Metadata received.');
+    log(`Info: ${info.title} (${info.duration || 'n/a'})`);
 
     const dl = await startDownload(url, quality);
-    setStatus('Complete', dl.message);
-    log(`Result: ${dl.file}`);
+    setStatus('Complete', dl.message || 'Download finished.');
+    log(`Result: ${dl.file || 'download ready'}`);
     setProgress(100);
   } catch (err) {
     console.error(err);
     setStatus('Error', err.message || 'Request failed');
-    log(`Error: ${err.message}`);
+    log(`Error: ${err.message || 'request failed'}`);
     setProgress(0);
   }
 });

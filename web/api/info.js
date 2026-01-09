@@ -1,15 +1,24 @@
-// Mock info endpoint. Replace with real logic (e.g., ytdl-core or yt-dlp via serverless) when ready.
+// Forwards metadata requests to a remote worker you control.
+// Set REMOTE_WORKER_URL (e.g., https://worker.example.com) in Vercel env vars.
 
-module.exports = (req, res) => {
+const WORKER_URL = process.env.REMOTE_WORKER_URL;
+
+module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const { url, quality } = req.body || {};
   if (!url) return res.status(400).json({ error: 'URL is required' });
+  if (!WORKER_URL) return res.status(500).json({ error: 'REMOTE_WORKER_URL not configured' });
 
-  res.status(200).json({
-    ok: true,
-    title: 'Sample media title',
-    duration: '3:12',
-    quality: quality || 'best',
-    message: 'Metadata fetched (mocked). Swap in your backend to go live.'
-  });
+  try {
+    const upstream = await fetch(`${WORKER_URL}/info`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, quality })
+    });
+
+    const data = await upstream.json();
+    return res.status(upstream.ok ? 200 : upstream.status).json(data);
+  } catch (err) {
+    return res.status(502).json({ error: 'Upstream info request failed', detail: String(err) });
+  }
 };
