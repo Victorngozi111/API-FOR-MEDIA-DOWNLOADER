@@ -108,8 +108,13 @@ body {
 .status-text h3 { margin: 4px 0; }
 .progress { width: 100%; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; }
 .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transition: width 220ms ease; }
-.download-action { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+.download-action { margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .btn.disabled { opacity: 0.5; pointer-events: none; }
+.support-actions { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 10px; }
+.issue-block { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.issue-row { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+.issue-row textarea { flex: 1; min-height: 70px; resize: vertical; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: var(--text); padding: 10px; font-size: 13px; }
+.issue-row .btn { white-space: nowrap; align-self: flex-start; }
 .description-block { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
 .description-row { display: flex; gap: 8px; align-items: stretch; }
 .description-row textarea { flex: 1; min-height: 90px; resize: vertical; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: var(--text); padding: 10px; font-size: 13px; }

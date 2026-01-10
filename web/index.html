@@ -87,6 +87,16 @@
             <button type="button" class="btn ghost" id="copy-description">Copy</button>
           </div>
         </div>
+        <div class="support-actions">
+          <button type="button" class="btn ghost" id="contact-whatsapp">Message developer (WhatsApp)</button>
+        </div>
+        <div class="issue-block">
+          <label for="issue-text">Facing an issue?</label>
+          <div class="issue-row">
+            <textarea id="issue-text" placeholder="Describe the problem; we'll forward it on WhatsApp."></textarea>
+            <button type="button" class="btn primary" id="send-issue">Send issue</button>
+          </div>
+        </div>
         <div class="log" id="log"></div>
       </div>
     </section>
@@ -95,16 +105,16 @@
       <div>
         <p class="eyebrow">About</p>
         <h3>apeXion Web Downloader</h3>
-        <p class="muted">Paste any supported link, pick a quality, and grab the media. Your backend worker handles the heavy lifting—Vercel just proxies.</p>
+        <p class="muted">Paste a link and download fast. Supported: YouTube Shorts, TikTok, Instagram/Reels, Pinterest, Facebook, Twitter/X, Threads.</p>
       </div>
       <div class="about-grid">
         <div>
-          <p class="eyebrow">How it works</p>
-          <p class="muted">The frontend calls `/api/info` and `/api/download`, which forward to your FastAPI yt-dlp worker. When ready, a download link appears below.</p>
+          <p class="eyebrow">Need help?</p>
+          <p class="muted">Message the developer on WhatsApp for support or custom requests.</p>
         </div>
         <div>
-          <p class="eyebrow">Notes</p>
-          <p class="muted">Keep `REMOTE_WORKER_URL` set in Vercel. Ensure the worker returns `download_url` so the buttons light up.</p>
+          <p class="eyebrow">Smooth downloads</p>
+          <p class="muted">Video and image links stay side-by-side. Copy descriptions, track status, and grab your file when ready.</p>
         </div>
       </div>
     </section>

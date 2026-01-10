@@ -10,6 +10,11 @@ const downloadAction = document.getElementById('download-action');
 const descriptionBlock = document.getElementById('description-block');
 const descriptionText = document.getElementById('description-text');
 const copyDescriptionBtn = document.getElementById('copy-description');
+const contactWhatsappBtn = document.getElementById('contact-whatsapp');
+const issueText = document.getElementById('issue-text');
+const sendIssueBtn = document.getElementById('send-issue');
+
+let lastUrl = '';
 
 function log(line) {
   const p = document.createElement('p');
@@ -98,6 +103,8 @@ form?.addEventListener('submit', async (e) => {
   const quality = document.getElementById('quality').value;
   if (!url) return;
 
+  lastUrl = url;
+
   setStatus('Fetching info', 'Talking to the downloader…');
   log(`Requested: ${url} (${quality})`);
   setProgress(10);
@@ -134,6 +141,23 @@ form?.addEventListener('submit', async (e) => {
 
 startBtn?.addEventListener('click', () => {
   document.getElementById('url').focus();
+});
+
+function openWhatsApp(message) {
+  const phone = '2348061745257';
+  const text = encodeURIComponent(message || 'Hi, I need support with the downloader.');
+  window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+}
+
+contactWhatsappBtn?.addEventListener('click', () => {
+  const msg = lastUrl ? `Hi, I need support. Link: ${lastUrl}` : 'Hi, I need support with the downloader.';
+  openWhatsApp(msg);
+});
+
+sendIssueBtn?.addEventListener('click', () => {
+  const details = issueText?.value?.trim();
+  const msg = details ? `Issue: ${details}${lastUrl ? ` | Link: ${lastUrl}` : ''}` : 'Issue: (please describe)';
+  openWhatsApp(msg);
 });
 
 copyDescriptionBtn?.addEventListener('click', async () => {
