@@ -36,7 +36,7 @@ class DownloadRequest(BaseModel):
     quality: Optional[str] = None
 
 
-def _ydl_opts(quality: Optional[str], source_url: Optional[str] = None) -> dict:
+def _ydl_opts(quality: Optional[str], source_url: Optional[str] = None, *, is_video: bool = True) -> dict:
     # Build domain-aware headers so sites like Pinterest respect the request.
     headers = DEFAULT_HEADERS.copy()
     if source_url:
@@ -54,16 +54,19 @@ def _ydl_opts(quality: Optional[str], source_url: Optional[str] = None) -> dict:
             if q:
                 height_clause = f"[height<={q}]"
 
-    fmt = (
-        f"bv*[ext=mp4][vcodec^=avc1]{height_clause}+ba[ext=m4a]/"
-        f"bv*[ext=mp4]{height_clause}+ba[ext=m4a]/"
-        f"b[ext=mp4]{height_clause}/"
-        "best[ext=mp4]/best"
-    )
+    if is_video:
+        fmt = (
+            f"bv*[ext=mp4][vcodec^=avc1]{height_clause}+ba[ext=m4a]/"
+            f"bv*[ext=mp4]{height_clause}+ba[ext=m4a]/"
+            f"b[ext=mp4]{height_clause}/"
+            "best[ext=mp4]/best"
+        )
+    else:
+        # For images (no video codec), just grab the best available original file.
+        fmt = "best/b"
 
-    return {
+    opts = {
         "format": fmt,
-        "merge_output_format": "mp4",
         "noplaylist": True,
         "quiet": True,
         "http_headers": headers,
@@ -71,6 +74,15 @@ def _ydl_opts(quality: Optional[str], source_url: Optional[str] = None) -> dict:
         "restrictfilenames": True,
         "windowsfilenames": True,
     }
+
+    if is_video:
+        opts["merge_output_format"] = "mp4"
+        # Remux to MP4 to avoid HEVC/VP9 playback issues in common players.
+        opts["postprocessors"] = [
+            {"key": "FFmpegVideoConvertor", "preferedformat": "mp4"},
+        ]
+
+    return opts
 
 
 def _safe_filename(raw: str) -> str:
@@ -83,7 +95,7 @@ def _safe_filename(raw: str) -> str:
 @app.post("/info")
 async def info(payload: InfoRequest):
     # Use safest defaults for metadata to reduce extractor-specific issues.
-    opts = _ydl_opts(None, payload.url)
+    opts = _ydl_opts(None, payload.url, is_video=True)
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
             data = ydl.extract_info(str(payload.url), download=False)
@@ -103,7 +115,7 @@ async def info(payload: InfoRequest):
 @app.post("/download")
 async def download(payload: DownloadRequest, request: Request):
     # Step 1: fetch metadata to derive a safe base name.
-    info_opts = _ydl_opts(None, payload.url)
+    info_opts = _ydl_opts(None, payload.url, is_video=True)
     try:
         with yt_dlp.YoutubeDL(info_opts) as ydl:
             info = ydl.extract_info(str(payload.url), download=False)
@@ -112,8 +124,19 @@ async def download(payload: DownloadRequest, request: Request):
 
     base_name = _safe_filename(info.get("title") or info.get("id") or "download")
 
+    # Detect whether this is a video (has vcodec) or just an image/resource.
+    def _is_video(meta: dict) -> bool:
+        if meta.get("vcodec") and meta.get("vcodec") != "none":
+            return True
+        for f in meta.get("formats") or []:
+            if f.get("vcodec") and f.get("vcodec") != "none":
+                return True
+        return False
+
+    is_video = _is_video(info)
+
     # Step 2: download with a deterministic, safe filename.
-    dl_opts = _ydl_opts(payload.quality, payload.url)
+    dl_opts = _ydl_opts(payload.quality, payload.url, is_video=is_video)
     dl_opts.update({
         "outtmpl": str(TMP_DIR / f"{base_name}.%(ext)s"),
     })
