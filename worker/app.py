@@ -53,6 +53,9 @@ def _ydl_opts(quality: Optional[str]) -> dict:
         "noplaylist": True,
         "quiet": True,
         "http_headers": DEFAULT_HEADERS,
+        # Force safe filenames from yt-dlp to avoid spaces/hashtags breaking /files/ serving.
+        "restrictfilenames": True,
+        "windowsfilenames": True,
     }
 
 
@@ -85,17 +88,24 @@ async def info(payload: InfoRequest):
 
 @app.post("/download")
 async def download(payload: DownloadRequest, request: Request):
-    opts = _ydl_opts(payload.quality)
+    # Step 1: fetch metadata to derive a safe base name.
+    info_opts = _ydl_opts(None)
+    try:
+        with yt_dlp.YoutubeDL(info_opts) as ydl:
+            info = ydl.extract_info(str(payload.url), download=False)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Failed to fetch info before download: {exc}")
 
-    # Force a predictable, safe filename: use video id when available; fallback to slugged title.
-    out_id = "%(id)s"
-    out_title = "%(title)s"
-    opts.update({
-        "outtmpl": str(TMP_DIR / f"{out_id}.%(ext)s"),
+    base_name = _safe_filename(info.get("title") or info.get("id") or "download")
+
+    # Step 2: download with a deterministic, safe filename.
+    dl_opts = _ydl_opts(payload.quality)
+    dl_opts.update({
+        "outtmpl": str(TMP_DIR / f"{base_name}.%(ext)s"),
     })
 
     try:
-        with yt_dlp.YoutubeDL(opts) as ydl:
+        with yt_dlp.YoutubeDL(dl_opts) as ydl:
             ydl.download([str(payload.url)])
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Download failed: {exc}")
@@ -107,7 +117,7 @@ async def download(payload: DownloadRequest, request: Request):
 
     file_path = candidates[0]
 
-    # First, enforce a safe filename based on the existing stem to avoid spaces/hashtags.
+    # Ensure the produced filename is slug-safe (double safety if extractor changed the name).
     safe_base = _safe_filename(file_path.stem)
     safe_name = f"{safe_base}{file_path.suffix}"
     if safe_name != file_path.name:
@@ -119,26 +129,6 @@ async def download(payload: DownloadRequest, request: Request):
             file_path = safe_target
         except Exception:
             pass
-
-    # Then, try to make it user-friendly using the real title if available.
-    try:
-        with yt_dlp.YoutubeDL(_ydl_opts(None)) as ydl:
-            info = ydl.extract_info(str(payload.url), download=False)
-            title = info.get("title") if isinstance(info, dict) else None
-            if title:
-                safe_title = _safe_filename(title)
-                friendly_name = f"{safe_title}{file_path.suffix}"
-                safe_target = TMP_DIR / friendly_name
-                if safe_target != file_path:
-                    try:
-                        if safe_target.exists():
-                            safe_target.unlink()
-                        file_path.rename(safe_target)
-                        file_path = safe_target
-                    except Exception:
-                        pass
-    except Exception:
-        pass
     # Build a download URL that serves from this worker.
     base_url = str(request.base_url).rstrip("/")
     download_url = f"{base_url}/files/{file_path.name}"
