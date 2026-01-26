@@ -77,10 +77,20 @@ def _ydl_opts(quality: Optional[str], source_url: Optional[str] = None, *, is_vi
 
     if is_video:
         opts["merge_output_format"] = "mp4"
-        # Remux to MP4 to avoid HEVC/VP9 playback issues in common players.
+        # Convert to a phone-friendly MP4 (H.264/AAC + faststart) for Instagram/TikTok/Facebook/YouTube.
         opts["postprocessors"] = [
             {"key": "FFmpegVideoConvertor", "preferedformat": "mp4"},
         ]
+        opts["postprocessor_args"] = [
+            "-movflags", "+faststart",
+            "-c:v", "libx264",
+            "-profile:v", "baseline",
+            "-level", "3.1",
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac",
+            "-b:a", "128k",
+        ]
+        opts["prefer_ffmpeg"] = True
 
     return opts
 
